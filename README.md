@@ -7,7 +7,7 @@ A modular Streamlit dashboard for evaluating generative molecular outputs via ch
 
 Built for evaluating small-molecule design rounds — not a generic cheminformatics dashboard.
 
-**[Try the live demo](https://peptone-evaluator-v2.streamlit.app/)** — upload the [sample dataset](data/example.csv) (5,168 molecules with SMILES + pIC50) to see every feature in action.
+**[Try the live demo](https://peptone-evaluator-v2.streamlit.app/)** — upload the [sample dataset](data/example.csv) (5,169 molecules with SMILES + pIC50) to see every feature in action.
 
 ![Peptone Evaluator v2](docs/screenshot.png)
 
@@ -75,7 +75,7 @@ peptone_evaluator_v2/
 ├── requirements.txt
 ├── README.md
 ├── data/
-│   └── example.csv                 # 5,168 molecules (SMILES + pIC50)
+│   └── example.csv                 # 5,169 molecules (SMILES + pIC50)
 ├── tests/
 │   ├── conftest.py                 # Shared fixtures (valid/invalid/duplicate molecules)
 │   ├── test_chemistry.py           # SMILES parsing and uniqueness
