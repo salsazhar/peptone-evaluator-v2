@@ -1,8 +1,12 @@
 # Peptone Generative Output Evaluator v2
 
+[![Tests](https://github.com/salsazhar/peptone-evaluator-v2/actions/workflows/tests.yml/badge.svg)](https://github.com/salsazhar/peptone-evaluator-v2/actions/workflows/tests.yml)
+
 A modular Streamlit dashboard for evaluating generative molecular outputs via chemical-space analysis, descriptor computation, scaffold analysis, and rule-based filtering.
 
 Built for evaluating small-molecule design rounds — not a generic cheminformatics dashboard.
+
+![Peptone Evaluator v2](docs/screenshot.png)
 
 ## Quick Start
 
