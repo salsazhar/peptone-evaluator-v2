@@ -1,10 +1,13 @@
 # Peptone Generative Output Evaluator v2
 
-A modular Streamlit dashboard for evaluating generative molecular outputs via chemical-space analysis, descriptor computation, and rule-based filtering.
+A modular Streamlit dashboard for evaluating generative molecular outputs via chemical-space analysis, descriptor computation, scaffold analysis, and rule-based filtering.
+
+Built for evaluating small-molecule design rounds — not a generic cheminformatics dashboard.
 
 ## Quick Start
 
 ```bash
+cd peptone_evaluator_v2
 pip install -r requirements.txt
 streamlit run app.py
 ```
@@ -13,12 +16,40 @@ Then upload a CSV with at least a **SMILES** column. A **pIC50** column is optio
 
 ## Features
 
+### Core Evaluation
 - **Descriptor computation** — MolWt, LogP, TPSA, HBD, HBA, Rotatable Bonds, Ring Count, Fraction Csp3, Heavy Atom Count, Formal Charge, QED, Molecular Formula
+- **Descriptor inspector** — single-descriptor histogram with KDE overlay, annotated mean/median/IQR, summary statistics table
 - **Rule-based flags** — Lipinski-like filter, high flexibility, high lipophilicity, extreme size
+- **Priority shortlist** — composite scoring (pIC50 + QED + diversity + rule compliance) with diverse representative selection
+
+### Chemical Space
 - **Dimensionality reduction** — PCA, t-SNE, and UMAP on 1024-bit Morgan fingerprints (ECFP4)
-- **Similarity & diversity** — pairwise Tanimoto, nearest-neighbour similarity, diversity score (with automatic sampling for large datasets)
-- **Interactive filters** — sidebar sliders for all descriptors, toggle for valid/unique/drug-like molecules
-- **Export** — download processed data as CSV
+- **Campaign comparison** — overlay current vs. reference set with novelty/overlap metrics
+- **Similarity & diversity** — pairwise Tanimoto, nearest-neighbour similarity, diversity score, top similar pairs, most isolated molecules
+
+### Scaffold Analysis
+- **Murcko decomposition** — extract core scaffolds from all valid molecules
+- **Generic frameworks** — collapse to carbon-only skeletons for aggressive grouping
+- **Scaffold diversity metrics** — unique scaffold count, scaffold ratio, singleton fraction, top scaffold frequency
+- **Frequency bar chart** — visual distribution of the most common scaffolds
+
+### Substructure Search
+- **SMARTS/SMILES query** — find molecules containing a specific pharmacophore or functional group
+- **Preset patterns** — common substructures (benzene, amide, sulfonamide, pyridine, piperazine, etc.)
+- **Structure highlighting** — SVG rendering with matched atoms highlighted
+- **Match export** — download matching molecules as CSV
+
+### Export
+- **CSV download** — full processed data with all computed columns
+- **SDF download** — Structure-Data File with embedded properties, ready for PyMOL, MOE, Maestro, and other chemistry tools
+- **Shortlist CSV** — priority-ranked molecules
+- **Diverse representatives CSV** — structurally diverse subset
+
+### Interactive Controls
+- Sidebar sliders for all descriptors
+- Toggle for valid/unique/drug-like molecules
+- Colour-by selector for chemical space plots
+- Configurable t-SNE perplexity and UMAP parameters
 
 ## Project Structure
 
@@ -31,27 +62,56 @@ peptone_evaluator_v2/
     ├── config.py                   # Constants and thresholds
     ├── data_loader.py              # CSV loading and column normalisation
     ├── chemistry.py                # SMILES parsing and canonicalisation
-    ├── descriptors.py              # Molecular descriptors and rule flags
+    ├── descriptors.py              # Molecular descriptors, rule flags, summary stats
     ├── fingerprints.py             # Morgan fingerprint generation
+    ├── scaffolds.py                # Murcko decomposition and scaffold diversity
+    ├── substructure.py             # SMARTS/SMILES substructure search and highlighting
     ├── dimensionality_reduction.py # PCA / t-SNE / UMAP
-    ├── similarity.py               # Tanimoto similarity and diversity
+    ├── similarity.py               # Tanimoto similarity and diversity metrics
+    ├── prioritization.py           # Composite scoring and shortlisting
+    ├── campaign.py                 # Reference set comparison
     ├── filters.py                  # DataFrame filtering logic
+    ├── export.py                   # SDF and CSV export utilities
     ├── plotting.py                 # Plotly figure builders
+    ├── theme.py                    # Theme-aware CSS and styling
     └── ui.py                       # Streamlit UI components
 ```
 
+## Module Responsibilities
+
+| Module | Purpose |
+|---|---|
+| `config.py` | All constants, thresholds, column names, and defaults in one place |
+| `data_loader.py` | CSV ingestion, case-insensitive column detection, pIC50 coercion |
+| `chemistry.py` | SMILES → RDKit Mol → canonical SMILES, validity tracking |
+| `descriptors.py` | 12 molecular descriptors + 4 rule flags + summary statistics |
+| `fingerprints.py` | 1024-bit Morgan fingerprints (radius 2, ECFP4-equivalent) |
+| `scaffolds.py` | Murcko scaffold extraction, generic frameworks, frequency analysis |
+| `substructure.py` | SMARTS/SMILES parsing, substructure matching, SVG highlighting |
+| `dimensionality_reduction.py` | PCA, t-SNE, UMAP wrappers with consistent interface |
+| `similarity.py` | Pairwise Tanimoto, nearest-neighbour, diversity score, duplicate detection |
+| `prioritization.py` | Composite scoring, shortlist generation, greedy diverse selection |
+| `campaign.py` | Reference set overlap detection, descriptor comparison tables |
+| `filters.py` | Pure-function DataFrame filtering from a `FilterSpec` dataclass |
+| `export.py` | DataFrame → SDF conversion with embedded properties |
+| `plotting.py` | All Plotly figures: scatter, histogram, KDE inspector, scaffold bars |
+| `theme.py` | Theme-aware CSS injection, Plotly template/layout helpers |
+| `ui.py` | Streamlit components: header, metrics strips, sidebar controls, shortlist |
+
 ## Design Decisions
 
-- **Single cached enrichment pass** — RDKit Mol objects are created, used for descriptors and fingerprints, then discarded before Streamlit's cache serialises the result.
+- **Single cached enrichment pass** — RDKit Mol objects are created, used for descriptors, scaffolds, and fingerprints, then discarded before Streamlit's cache serialises the result.
 - **Filters apply to display, not computation** — dimensionality reduction runs on all valid molecules; filters only control which points are shown, preventing coordinate shifts on filter change.
 - **Similarity sampling** — pairwise Tanimoto is computed on up to 5,000 molecules; larger datasets are randomly sampled and flagged in the UI.
 - **Optional pIC50** — the app works fully without a pIC50 column; colour-by-activity features are conditional.
+- **SDF with properties** — exported SDF files include all computed descriptors, scaffold assignments, and scores as data fields.
+- **Substructure presets** — common pharmacophoric patterns are pre-loaded for quick access; custom SMARTS also supported.
+- **Scaffold diversity as a metric** — scaffold ratio and singleton fraction quantify whether a generative model is exploring diverse core structures.
 
 ## Future Extensions
 
-- Substructure search and highlighting
-- Scaffold analysis (Murcko decomposition)
-- Multi-file comparison (reference vs. generated set)
-- Custom descriptor upload or user-defined QSAR models
-- Batch export of filtered molecule sets in SDF format
-- Integration with external databases (ChEMBL, PubChem)
+- Round-over-round improvement tracking (property profile drift across campaigns)
+- Property-space coverage maps for IDP-relevant chemical space
+- Conformational flexibility scoring (relevant for disordered protein targets)
+- Batch substructure filtering across multiple patterns
+- Scaffold-aware clustering in chemical space plots

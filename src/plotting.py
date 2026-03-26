@@ -357,3 +357,56 @@ def similarity_histogram(
         bargap=0.05,
     )
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Scaffold frequency bar chart
+# ---------------------------------------------------------------------------
+
+def scaffold_bar_chart(
+    freq_df: "pd.DataFrame",
+    title: str = "Top Scaffolds by Frequency",
+    max_bars: int = 15,
+) -> go.Figure:
+    """
+    Horizontal bar chart of scaffold frequencies.
+
+    Expects a DataFrame with columns: Scaffold, Count, Fraction.
+    """
+    template = get_plotly_template()
+    layout_defaults = get_plotly_layout_defaults()
+
+    plot_df = freq_df.head(max_bars).copy()
+    # Truncate long SMILES for axis labels
+    plot_df["label"] = plot_df["Scaffold"].apply(
+        lambda s: s if len(str(s)) <= 40 else str(s)[:37] + "..."
+    )
+
+    fig = go.Figure(
+        go.Bar(
+            y=plot_df["label"],
+            x=plot_df["Count"],
+            orientation="h",
+            marker_color=CHART_COLORS["primary"],
+            opacity=0.8,
+            text=plot_df["Fraction"].apply(lambda f: f"{f:.1%}"),
+            textposition="auto",
+            hovertemplate=(
+                "Scaffold: %{customdata[0]}<br>"
+                "Count: %{x}<br>"
+                "Fraction: %{customdata[1]:.2%}<extra></extra>"
+            ),
+            customdata=plot_df[["Scaffold", "Fraction"]].values,
+        )
+    )
+
+    fig.update_layout(
+        template=template,
+        **layout_defaults,
+        yaxis=dict(autorange="reversed"),
+        xaxis_title="Count",
+        yaxis_title="",
+        height=max(280, 28 * len(plot_df) + 80),
+        title=dict(text=title, font=dict(size=13), x=0, y=0.98) if title else {},
+    )
+    return fig

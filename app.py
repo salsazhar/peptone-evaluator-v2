@@ -56,7 +56,20 @@ from src.plotting import (
     descriptor_inspector,
     distribution_grid,
     similarity_histogram,
+    scaffold_bar_chart,
 )
+from src.scaffolds import (
+    compute_scaffolds,
+    scaffold_frequency,
+    scaffold_diversity_stats,
+)
+from src.substructure import (
+    parse_substructure_query,
+    substructure_search,
+    highlight_substructure_svg,
+    COMMON_SUBSTRUCTURES,
+)
+from src.export import sdf_bytes
 from src.ui import (
     render_app_header,
     render_section_label,
@@ -86,14 +99,15 @@ inject_global_css()
 # CACHED ENRICHMENT
 # ═══════════════════════════════════════════════════════════════════════════
 
-@st.cache_data(show_spinner="Parsing molecules, computing descriptors & fingerprints\u2026")
+@st.cache_data(show_spinner="Parsing molecules, computing descriptors, scaffolds & fingerprints\u2026")
 def enrich_molecules(smiles_series: pd.Series, other_cols: pd.DataFrame):
-    """Parse SMILES, compute descriptors, flags, and Morgan fingerprints."""
+    """Parse SMILES, compute descriptors, flags, scaffolds, and Morgan fingerprints."""
     df = other_cols.copy()
     df[COL_SMILES] = smiles_series
     df = parse_smiles_column(df)
     df = compute_descriptors(df)
     df = apply_rule_flags(df)
+    df = compute_scaffolds(df)          # Murcko decomposition
     fp_matrix = compute_morgan_fingerprints(df)
     df["is_unique"] = get_unique_mask(df)
     df = df.drop(columns=["mol"])
@@ -126,7 +140,12 @@ render_app_header(
 )
 
 if uploaded_current is None:
-    st.info("Upload a CSV file in the sidebar to begin.")
+    st.markdown("---")
+    st.markdown(
+        "### Upload a CSV to begin\n\n"
+        "Use the **sidebar** (click **›** if collapsed) to upload a CSV containing "
+        "a `SMILES` column. A `pIC50` column is optional."
+    )
     st.stop()
 
 
@@ -388,6 +407,151 @@ else:
     st.info("Need at least 2 valid molecules to compute similarity metrics.")
 
 
+# ── Scaffold Analysis ─────────────────────────────────────────────────────
+render_section_label(
+    "Scaffold Analysis",
+    subtitle="Murcko decomposition of valid molecules. Measures whether the generative "
+             "model is exploring diverse core structures or producing trivial variations.",
+)
+
+if "murcko_scaffold" in filtered_df.columns:
+    valid_for_scaff = filtered_df[filtered_df[COL_VALID]]
+    if not valid_for_scaff.empty and valid_for_scaff["murcko_scaffold"].notna().any():
+        scaff_stats = scaffold_diversity_stats(valid_for_scaff, "murcko_scaffold")
+
+        render_metrics_strip([
+            ("Unique Scaffolds", f"{scaff_stats['unique_scaffolds']:,}"),
+            ("Scaffold Ratio", f"{scaff_stats['scaffold_ratio']:.3f}"),
+            ("Singletons", f"{scaff_stats['singleton_scaffolds']:,} "
+                           f"({scaff_stats['singleton_fraction']:.1%})"),
+            ("Top Scaffold", f"{scaff_stats['top_scaffold_count']:,} "
+                             f"({scaff_stats['top_scaffold_fraction']:.1%})"),
+        ])
+
+        freq_df = scaffold_frequency(valid_for_scaff, "murcko_scaffold", top_n=15)
+        if not freq_df.empty:
+            st.plotly_chart(
+                scaffold_bar_chart(freq_df, title="Top Murcko Scaffolds"),
+                use_container_width=True,
+            )
+
+        with st.expander("Scaffold frequency table"):
+            full_freq = scaffold_frequency(valid_for_scaff, "murcko_scaffold", top_n=50)
+            if not full_freq.empty:
+                st.dataframe(full_freq, use_container_width=True, hide_index=True)
+
+        # Generic scaffold view
+        with st.expander("Generic framework analysis"):
+            gen_stats = scaffold_diversity_stats(valid_for_scaff, "generic_scaffold")
+            st.markdown(
+                '<div class="muted-text">'
+                "Generic frameworks collapse all atoms to carbon and all bonds to single, "
+                "grouping structurally similar scaffolds more aggressively."
+                "</div>",
+                unsafe_allow_html=True,
+            )
+            render_metrics_strip([
+                ("Generic Frameworks", f"{gen_stats['unique_scaffolds']:,}"),
+                ("Framework Ratio", f"{gen_stats['scaffold_ratio']:.3f}"),
+            ])
+            gen_freq = scaffold_frequency(valid_for_scaff, "generic_scaffold", top_n=15)
+            if not gen_freq.empty:
+                st.dataframe(gen_freq, use_container_width=True, hide_index=True)
+    else:
+        st.info("No valid scaffolds to analyse.")
+else:
+    st.info("Scaffold data not available.")
+
+
+# ── Substructure Search ───────────────────────────────────────────────────
+render_section_label(
+    "Substructure Search",
+    subtitle="Query by SMARTS or SMILES to find molecules containing a specific "
+             "pharmacophore or functional group.",
+)
+
+ss_col1, ss_col2 = st.columns([3, 1])
+with ss_col1:
+    ss_query = st.text_input(
+        "SMARTS or SMILES query",
+        placeholder="e.g. c1ccccc1 (benzene) or [NH2] (primary amine)",
+        label_visibility="collapsed",
+    )
+with ss_col2:
+    ss_preset = st.selectbox(
+        "Preset",
+        ["Custom"] + list(COMMON_SUBSTRUCTURES.keys()),
+        label_visibility="collapsed",
+    )
+
+# Resolve query
+active_query = ""
+if ss_preset != "Custom":
+    active_query = COMMON_SUBSTRUCTURES[ss_preset]
+elif ss_query:
+    active_query = ss_query
+
+if active_query:
+    query_mol = parse_substructure_query(active_query)
+    if query_mol is None:
+        st.warning(f"Could not parse query: `{active_query}`")
+    else:
+        valid_for_ss = filtered_df[filtered_df[COL_VALID]]
+        ss_mask = substructure_search(valid_for_ss, query_mol)
+        n_matches = int(ss_mask.sum())
+        n_searched = len(valid_for_ss)
+
+        render_metrics_strip([
+            ("Matches", f"{n_matches:,}"),
+            ("Searched", f"{n_searched:,}"),
+            ("Hit Rate", f"{n_matches / n_searched:.1%}" if n_searched else "—"),
+        ])
+
+        if n_matches > 0:
+            match_df = valid_for_ss[ss_mask]
+            display_cols = [c for c in [COL_CANONICAL, "MolWt", "LogP", "QED",
+                                        "passes_lipinski_like", "murcko_scaffold"]
+                           if c in match_df.columns]
+            if COL_PIC50 in match_df.columns and has_pic50:
+                display_cols = [COL_PIC50] + display_cols
+
+            st.dataframe(
+                match_df[display_cols].head(50),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+            # Show up to 4 highlighted structures
+            with st.expander("Highlighted structures (first 4 matches)"):
+                svg_cols = st.columns(min(4, n_matches))
+                for i, (_, row) in enumerate(match_df.head(4).iterrows()):
+                    smi = row.get(COL_CANONICAL) or row.get(COL_SMILES)
+                    svg = highlight_substructure_svg(str(smi), query_mol)
+                    if svg:
+                        with svg_cols[i]:
+                            st.markdown(svg, unsafe_allow_html=True)
+                            st.caption(str(smi)[:40])
+
+            # Download matches
+            csv_matches = match_df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "Download matches (CSV)",
+                data=csv_matches,
+                file_name="peptone_substructure_matches.csv",
+                mime="text/csv",
+            )
+        else:
+            st.info("No molecules match this substructure in the current filtered set.")
+else:
+    st.markdown(
+        '<div class="muted-text">'
+        "Enter a SMARTS pattern or SMILES string above, or select a preset "
+        "from the dropdown."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+
 # ── Descriptor Distributions ──────────────────────────────────────────────
 render_section_label("Descriptor Distributions", subtitle_key="distributions")
 
@@ -456,7 +620,11 @@ else:
 # ═══════════════════════════════════════════════════════════════════════════
 # ── UTILITIES ──
 # ═══════════════════════════════════════════════════════════════════════════
-render_section_label("Data & Export")
+render_section_label(
+    "Data & Export",
+    subtitle="Download processed data in CSV or SDF format. SDF files can be "
+             "opened directly in PyMOL, MOE, Maestro, and other chemistry tools.",
+)
 
 with st.expander("Data preview"):
     tab_raw, tab_proc = st.tabs(["Raw", "Processed"])
@@ -466,7 +634,23 @@ with st.expander("Data preview"):
         display_cols = [c for c in filtered_df.columns if c not in ("mol",)]
         st.dataframe(filtered_df[display_cols].head(5), use_container_width=True)
 
-with st.expander("Download full processed data"):
-    render_download_button(filtered_df)
+with st.expander("Download processed data"):
+    dl_col1, dl_col2 = st.columns(2)
+
+    # CSV download
+    with dl_col1:
+        render_download_button(filtered_df)
+
+    # SDF download
+    with dl_col2:
+        sdf_valid_only = st.checkbox("Valid molecules only (SDF)", value=True)
+        sdf_data = sdf_bytes(filtered_df, valid_only=sdf_valid_only)
+        st.download_button(
+            label="Download SDF",
+            data=sdf_data,
+            file_name="peptone_v2_processed.sdf",
+            mime="chemical/x-mdl-sdfile",
+        )
+
     display_cols = [c for c in filtered_df.columns if c not in ("mol",)]
     st.dataframe(filtered_df[display_cols], use_container_width=True)
