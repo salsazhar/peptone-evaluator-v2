@@ -1,22 +1,34 @@
 # Peptone Generative Output Evaluator v2
 
 [![Tests](https://github.com/salsazhar/peptone-evaluator-v2/actions/workflows/tests.yml/badge.svg)](https://github.com/salsazhar/peptone-evaluator-v2/actions/workflows/tests.yml)
+[![Live App](https://img.shields.io/badge/Streamlit-Live_Demo-FF4B4B?logo=streamlit&logoColor=white)](https://peptone-evaluator-v2.streamlit.app/)
 
 A modular Streamlit dashboard for evaluating generative molecular outputs via chemical-space analysis, descriptor computation, scaffold analysis, and rule-based filtering.
 
 Built for evaluating small-molecule design rounds — not a generic cheminformatics dashboard.
 
+**[Try the live demo](https://peptone-evaluator-v2.streamlit.app/)** — upload the [sample dataset](data/example.csv) (5,168 molecules with SMILES + pIC50) to see every feature in action.
+
 ![Peptone Evaluator v2](docs/screenshot.png)
 
 ## Quick Start
 
+### Live demo (no install required)
+
+1. Open **[peptone-evaluator-v2.streamlit.app](https://peptone-evaluator-v2.streamlit.app/)**
+2. Download the [example dataset](data/example.csv) from this repo
+3. Upload it via the sidebar
+
+### Run locally
+
 ```bash
-cd peptone_evaluator_v2
+git clone https://github.com/salsazhar/peptone-evaluator-v2.git
+cd peptone-evaluator-v2
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Upload the included sample dataset (`data/example.csv` — 5,168 molecules with SMILES + pIC50) to see every feature in action. Any CSV with a **SMILES** column will work; **pIC50** is optional.
+Any CSV with a **SMILES** column will work. A **pIC50** column is optional — if present, scatter plots are coloured by binding affinity.
 
 ## Features
 
