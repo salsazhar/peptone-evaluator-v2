@@ -286,48 +286,39 @@ def descriptor_inspector(
     except Exception:
         pass
 
-    # Smart mean/median annotation placement
-    data_range = float(vals.max()) - float(vals.min())
-    closeness = abs(mean_val - median_val) / data_range if data_range > 0 else 0
-
-    # If they're very close (<5% of range), stagger annotations
-    if closeness < 0.05:
-        mean_ay = -30
-        median_ay = -55
-    else:
-        mean_ay = -30
-        median_ay = -30
-
-    # Mean annotation
+    # Mean and median vertical lines (clean, no annotations on the lines)
     fig.add_vline(
         x=mean_val,
-        line=dict(color=CHART_COLORS["danger"], width=1.2, dash="dash"),
+        line=dict(color=CHART_COLORS["danger"], width=1.5, dash="dash"),
     )
-    fig.add_annotation(
-        x=mean_val, y=1, yref="paper",
-        text=f"<b>μ</b> = {mean_val:.2f}",
-        showarrow=True, arrowhead=0, arrowwidth=1,
-        arrowcolor=CHART_COLORS["danger"],
-        ax=0, ay=mean_ay,
-        font=dict(size=_ANNOT_FONT_SIZE, color=CHART_COLORS["danger"]),
-        bgcolor="rgba(0,0,0,0)",
-        borderpad=2,
-    )
-
-    # Median annotation
     fig.add_vline(
         x=median_val,
-        line=dict(color=CHART_COLORS["warning"], width=1.2, dash="dot"),
+        line=dict(color=CHART_COLORS["warning"], width=1.5, dash="dot"),
+    )
+
+    # Place labels at the top of the plot area using paper coordinates
+    # so they never overlap with each other or the data
+    is_dark = "dark" in template.lower() if isinstance(template, str) else False
+    label_bg = "rgba(30,30,30,0.85)" if is_dark else "rgba(255,255,255,0.9)"
+    label_border = "rgba(128,128,128,0.3)"
+
+    fig.add_annotation(
+        text=f"<b>μ</b> = {mean_val:.2f}",
+        xref="paper", yref="paper",
+        x=0.0, y=1.06,
+        showarrow=False, align="left",
+        font=dict(size=_ANNOT_FONT_SIZE, color=CHART_COLORS["danger"]),
+        bgcolor=label_bg, bordercolor=label_border,
+        borderwidth=1, borderpad=4,
     )
     fig.add_annotation(
-        x=median_val, y=1, yref="paper",
         text=f"<b>med</b> = {median_val:.2f}",
-        showarrow=True, arrowhead=0, arrowwidth=1,
-        arrowcolor=CHART_COLORS["warning"],
-        ax=0, ay=median_ay,
+        xref="paper", yref="paper",
+        x=0.18, y=1.06,
+        showarrow=False, align="left",
         font=dict(size=_ANNOT_FONT_SIZE, color=CHART_COLORS["warning"]),
-        bgcolor="rgba(0,0,0,0)",
-        borderpad=2,
+        bgcolor=label_bg, bordercolor=label_border,
+        borderwidth=1, borderpad=4,
     )
 
     # Statistics panel — compact, monospaced
@@ -353,6 +344,7 @@ def descriptor_inspector(
     layout.update(
         height=_H_INSPECTOR,
         bargap=_BAR_GAP,
+        margin=dict(l=48, r=20, t=48, b=40),  # extra top margin for labels
     )
     layout["xaxis"]["title_text"] = descriptor_name
     layout["yaxis"]["title_text"] = "Density"
