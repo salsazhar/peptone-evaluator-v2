@@ -12,7 +12,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Then upload a CSV with at least a **SMILES** column. A **pIC50** column is optional — if present, scatter plots will be coloured by binding affinity.
+Upload the included sample dataset (`data/example.csv` — 5,168 molecules with SMILES + pIC50) to see every feature in action. Any CSV with a **SMILES** column will work; **pIC50** is optional.
 
 ## Features
 
@@ -58,6 +58,20 @@ peptone_evaluator_v2/
 ├── app.py                          # Streamlit entrypoint
 ├── requirements.txt
 ├── README.md
+├── data/
+│   └── example.csv                 # 5,168 molecules (SMILES + pIC50)
+├── tests/
+│   ├── conftest.py                 # Shared fixtures (valid/invalid/duplicate molecules)
+│   ├── test_chemistry.py           # SMILES parsing and uniqueness
+│   ├── test_data_loader.py         # CSV loading and column normalisation
+│   ├── test_descriptors.py         # Descriptor computation and rule flags
+│   ├── test_export.py              # SDF export
+│   ├── test_filters.py             # Filter pipeline
+│   ├── test_fingerprints.py        # Morgan fingerprint generation
+│   ├── test_prioritization.py      # Priority scoring and diverse selection
+│   ├── test_scaffolds.py           # Murcko decomposition and diversity
+│   ├── test_similarity.py          # Tanimoto similarity and duplicate detection
+│   └── test_substructure.py        # Substructure search and presets
 └── src/
     ├── config.py                   # Constants and thresholds
     ├── data_loader.py              # CSV loading and column normalisation
@@ -97,6 +111,31 @@ peptone_evaluator_v2/
 | `plotting.py` | All Plotly figures: scatter, histogram, KDE inspector, scaffold bars |
 | `theme.py` | Theme-aware CSS injection, Plotly template/layout helpers |
 | `ui.py` | Streamlit components: header, metrics strips, sidebar controls, shortlist |
+
+## Tests
+
+87 tests across 10 modules. Run with:
+
+```bash
+python -m pytest tests/ -v
+```
+
+The test suite validates the computational core of the evaluator — the modules that parse molecules, compute properties, and produce scores. These are the functions where correctness matters most: a wrong Tanimoto score, a miscomputed descriptor, or a broken filter silently produces misleading results in the dashboard. The tests catch regressions in this layer so the UI can be iterated on with confidence.
+
+| Module | Tests | What it validates |
+|---|---|---|
+| `test_chemistry` | 10 | SMILES parsing, canonicalisation, validity flags, duplicate detection |
+| `test_data_loader` | 5 | Case-insensitive column detection, pIC50 coercion, missing-column errors |
+| `test_descriptors` | 10 | All 12 descriptors computed, rule flags (Lipinski, extreme size), summary stats |
+| `test_fingerprints` | 5 | Output shape, binary values, identical-molecule invariance, invalid-input handling |
+| `test_filters` | 8 | Valid/unique/Lipinski toggles, range sliders, immutability of input, empty results |
+| `test_similarity` | 11 | Pairwise Tanimoto, nearest-neighbour, diversity score, duplicates, edge cases |
+| `test_scaffolds` | 10 | Murcko decomposition, generic frameworks, frequency tables, diversity metrics |
+| `test_substructure` | 7 | SMARTS/SMILES parsing, substructure matching, all 14 preset patterns validated |
+| `test_prioritization` | 6 | Composite scoring, shortlist ordering, diverse selection, no-pIC50 mode |
+| `test_export` | 4 | SDF generation, property embedding, invalid-molecule handling |
+
+Fixtures in `conftest.py` provide a small, deterministic molecule set (ethanol, benzene, aspirin, ibuprofen, testosterone + invalid SMILES + duplicates) that exercises the main code paths without depending on external data.
 
 ## Design Decisions
 
