@@ -10,7 +10,6 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem import Draw
 
 from .config import COL_SMILES, COL_CANONICAL, COL_VALID
 
@@ -109,7 +108,12 @@ def highlight_substructure_svg(
     if not match:
         return None
 
-    drawer = Draw.MolDraw2DSVG(*size)
+    try:
+        from rdkit.Chem import Draw
+        drawer = Draw.MolDraw2DSVG(*size)
+    except ImportError:
+        return None
+
     drawer.DrawMolecule(
         mol,
         highlightAtoms=list(match),
