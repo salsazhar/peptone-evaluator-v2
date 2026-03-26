@@ -42,22 +42,40 @@ def get_plotly_template() -> str:
 
 def get_plotly_layout_defaults() -> dict:
     """
-    Shared Plotly layout overrides — transparent backgrounds, clean grid,
-    and a system font stack so charts feel native to the app.
+    Shared Plotly layout overrides — transparent backgrounds, no gridlines,
+    thin axis lines, and a system font stack.
+
+    Note: the main chart functions in plotting.py use ``_base_layout()``
+    directly for tighter control. This function remains for backward
+    compatibility and edge cases.
     """
     return dict(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family=_FONT_STACK, size=12),
+        font=dict(family=_FONT_STACK, size=10),
         xaxis=dict(
-            gridcolor="rgba(128,128,128,0.12)",
-            zerolinecolor="rgba(128,128,128,0.18)",
+            showgrid=False,
+            showline=True,
+            linewidth=1,
+            linecolor="rgba(128,128,128,0.35)",
+            zeroline=False,
+            ticks="outside",
+            ticklen=3,
+            tickwidth=1,
+            tickcolor="rgba(128,128,128,0.35)",
         ),
         yaxis=dict(
-            gridcolor="rgba(128,128,128,0.12)",
-            zerolinecolor="rgba(128,128,128,0.18)",
+            showgrid=False,
+            showline=True,
+            linewidth=1,
+            linecolor="rgba(128,128,128,0.35)",
+            zeroline=False,
+            ticks="outside",
+            ticklen=3,
+            tickwidth=1,
+            tickcolor="rgba(128,128,128,0.35)",
         ),
-        margin=dict(l=40, r=24, t=36, b=36),
+        margin=dict(l=48, r=20, t=32, b=40),
     )
 
 
@@ -202,14 +220,14 @@ section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
 
 /* ── Tabs ─────────────────────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 0.2rem;
-    border-bottom: 1px solid rgba(128,128,128,0.15);
+    gap: 0.15rem;
+    border-bottom: 1px solid rgba(128,128,128,0.12);
 }
 .stTabs [data-baseweb="tab"] {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 500;
-    letter-spacing: 0.01em;
-    padding: 0.5rem 1rem;
+    letter-spacing: 0.02em;
+    padding: 0.45rem 0.9rem;
 }
 .stTabs [data-baseweb="tab-highlight"] {
     height: 2px;
@@ -217,38 +235,48 @@ section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
 
 /* ── Expanders ────────────────────────────────────────────────────── */
 .streamlit-expanderHeader {
-    font-size: 0.88rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 details[data-testid="stExpander"] {
-    border: 1px solid rgba(128,128,128,0.12) !important;
-    border-radius: 4px !important;
+    border: 1px solid rgba(128,128,128,0.1) !important;
+    border-radius: 3px !important;
 }
 
 /* ── Tables ────────────────────────────────────────────────────────── */
 [data-testid="stDataFrame"] th {
-    font-size: 0.72rem !important;
+    font-size: 0.68rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.03em !important;
+    letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
+}
+[data-testid="stDataFrame"] td {
+    font-size: 0.78rem !important;
 }
 
 /* ── Download buttons ─────────────────────────────────────────────── */
 [data-testid="stDownloadButton"] button {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 500;
-    padding: 0.35rem 0.9rem;
-    border-radius: 4px;
+    padding: 0.3rem 0.8rem;
+    border-radius: 3px;
 }
 
 /* ── File uploader ────────────────────────────────────────────────── */
 [data-testid="stFileUploader"] label {
-    font-size: 0.8rem !important;
+    font-size: 0.78rem !important;
 }
 
 /* ── Plotly chart containers ──────────────────────────────────────── */
 [data-testid="stPlotlyChart"] {
     padding: 0 !important;
+}
+
+/* ── st.info / st.warning — subtle ───────────────────────────────── */
+[data-testid="stAlert"] {
+    font-size: 0.8rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 3px;
 }
 
 /* ── Muted helper text ────────────────────────────────────────────── */
