@@ -1,0 +1,3 @@
+cd ~/Desktop/peptone/peptone_evaluator_v2
+pip install -r requirements.txt
+streamlit run app.py
