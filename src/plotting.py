@@ -403,10 +403,9 @@ def scaffold_bar_chart(
     fig.update_layout(
         template=template,
         **layout_defaults,
-        yaxis=dict(autorange="reversed"),
         xaxis_title="Count",
-        yaxis_title="",
         height=max(280, 28 * len(plot_df) + 80),
         title=dict(text=title, font=dict(size=13), x=0, y=0.98) if title else {},
     )
+    fig.update_yaxes(autorange="reversed", title="")
     return fig
