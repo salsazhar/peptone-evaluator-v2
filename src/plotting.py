@@ -286,7 +286,7 @@ def descriptor_inspector(
     except Exception:
         pass
 
-    # Mean and median vertical lines (clean, no annotations on the lines)
+    # Vertical lines only — no text labels on the lines
     fig.add_vline(
         x=mean_val,
         line=dict(color=CHART_COLORS["danger"], width=1.5, dash="dash"),
@@ -296,55 +296,34 @@ def descriptor_inspector(
         line=dict(color=CHART_COLORS["warning"], width=1.5, dash="dot"),
     )
 
-    # Place labels at the top of the plot area using paper coordinates
-    # so they never overlap with each other or the data
-    is_dark = "dark" in template.lower() if isinstance(template, str) else False
-    label_bg = "rgba(30,30,30,0.85)" if is_dark else "rgba(255,255,255,0.9)"
-    label_border = "rgba(128,128,128,0.3)"
-
-    fig.add_annotation(
-        text=f"<b>μ</b> = {mean_val:.2f}",
-        xref="paper", yref="paper",
-        x=0.0, y=1.06,
-        showarrow=False, align="left",
-        font=dict(size=_ANNOT_FONT_SIZE, color=CHART_COLORS["danger"]),
-        bgcolor=label_bg, bordercolor=label_border,
-        borderwidth=1, borderpad=4,
-    )
-    fig.add_annotation(
-        text=f"<b>med</b> = {median_val:.2f}",
-        xref="paper", yref="paper",
-        x=0.18, y=1.06,
-        showarrow=False, align="left",
-        font=dict(size=_ANNOT_FONT_SIZE, color=CHART_COLORS["warning"]),
-        bgcolor=label_bg, bordercolor=label_border,
-        borderwidth=1, borderpad=4,
-    )
-
-    # Statistics panel — compact, monospaced
+    # Single statistics panel with integrated line legend
+    # Colour-coded labels match the vertical lines
+    mean_color = CHART_COLORS["danger"]
+    med_color = CHART_COLORS["warning"]
     stat_text = (
-        f"<b>n</b> = {n:,}  "
-        f"<b>μ</b> = {mean_val:.3f}  "
-        f"<b>σ</b> = {std_val:.3f}<br>"
-        f"<b>med</b> = {median_val:.3f}  "
+        f"<span style='color:{mean_color}'>\u2500\u2500 </span>"
+        f"<b>μ</b> = {mean_val:.3f}   "
+        f"<span style='color:{med_color}'>\u00b7\u00b7\u00b7\u00b7 </span>"
+        f"<b>med</b> = {median_val:.3f}<br>"
+        f"<b>n</b> = {n:,}   "
+        f"<b>σ</b> = {std_val:.3f}   "
         f"<b>IQR</b> = [{q1:.2f}, {q3:.2f}]"
     )
     fig.add_annotation(
         text=stat_text,
         xref="paper", yref="paper",
-        x=0.98, y=0.92,
+        x=0.98, y=0.95,
         showarrow=False, align="right",
         font=dict(size=_ANNOT_FONT_SIZE, family=_MONO),
         bgcolor="rgba(128,128,128,0.06)",
         bordercolor="rgba(128,128,128,0.12)",
-        borderwidth=1, borderpad=5,
+        borderwidth=1, borderpad=6,
     )
 
     layout = _base_layout(template)
     layout.update(
         height=_H_INSPECTOR,
         bargap=_BAR_GAP,
-        margin=dict(l=48, r=20, t=48, b=40),  # extra top margin for labels
     )
     layout["xaxis"]["title_text"] = descriptor_name
     layout["yaxis"]["title_text"] = "Density"
