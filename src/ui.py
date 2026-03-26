@@ -11,6 +11,8 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+import html as html_lib
+
 from .config import (
     COL_PIC50,
     COL_VALID,
@@ -21,8 +23,36 @@ from .config import (
     SECTION_SUBTITLES,
     APP_TITLE,
     APP_SUBTITLE,
+    GLOSSARY,
 )
 from .filters import FilterSpec
+
+
+# ---------------------------------------------------------------------------
+# Contextual help — inline tooltip helper
+# ---------------------------------------------------------------------------
+
+def hint(term: str, definition: str | None = None) -> str:
+    """
+    Return an HTML snippet for a small ⓘ icon with a hover tooltip.
+
+    If *definition* is not provided, looks up *term* in the GLOSSARY dict.
+    Returns an empty string if no definition is found — never crashes.
+
+    Usage in st.markdown:
+        st.markdown(f'<div class="metric-label">MolWt {hint("MolWt")}</div>',
+                    unsafe_allow_html=True)
+    """
+    text = definition or GLOSSARY.get(term, "")
+    if not text:
+        return ""
+    escaped = html_lib.escape(text, quote=True)
+    return (
+        f'<span class="hint-wrap">'
+        f'<span class="hint-icon">i</span>'
+        f'<span class="hint-tip">{escaped}</span>'
+        f'</span>'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -79,20 +109,23 @@ def render_section_label(
 # Metrics strip — instrument-panel readout
 # ---------------------------------------------------------------------------
 
-def render_metrics_strip(items: list[tuple[str, str]]) -> None:
+def render_metrics_strip(items: list[tuple[str, str]], show_hints: bool = True) -> None:
     """
     Horizontal strip of value/label pairs.
 
     Each item is (label, value). Renders with large numeric emphasis
     and tiny uppercase labels — no card borders.
+    When show_hints is True, a small ⓘ tooltip is appended to each
+    label if a glossary definition exists.
     """
     if not items:
         return
     cols = st.columns(len(items))
     for col, (label, value) in zip(cols, items):
+        h = hint(label) if show_hints else ""
         col.markdown(
             f'<div class="metric-value">{value}</div>'
-            f'<div class="metric-label">{label}</div>',
+            f'<div class="metric-label">{label}{h}</div>',
             unsafe_allow_html=True,
         )
 
@@ -235,7 +268,10 @@ def render_sidebar_filters(
             hi = float(valid_df[col].max())
         else:
             lo, hi = default_min, default_max
-        return st.sidebar.slider(label, min_value=lo, max_value=hi, value=(lo, hi), step=step)
+        return st.sidebar.slider(
+            label, min_value=lo, max_value=hi, value=(lo, hi), step=step,
+            help=GLOSSARY.get(col, ""),
+        )
 
     mw_range = _range_slider("Mol. Weight", "MolWt", 0.0, 1500.0, 5.0)
     logp_range = _range_slider("LogP", "LogP", -5.0, 10.0, 0.1)
@@ -246,7 +282,10 @@ def render_sidebar_filters(
             hi = int(valid_df[col].max())
         else:
             hi = default_max
-        return st.sidebar.slider(label, min_value=0, max_value=max(hi, 1), value=max(hi, 1))
+        return st.sidebar.slider(
+            label, min_value=0, max_value=max(hi, 1), value=max(hi, 1),
+            help=GLOSSARY.get(col, ""),
+        )
 
     hbd_max = _max_slider("Max HBD", "HBD", 20)
     hba_max = _max_slider("Max HBA", "HBA", 20)
@@ -258,6 +297,7 @@ def render_sidebar_filters(
         hi = float(valid_df[COL_PIC50].max())
         pic50_range = st.sidebar.slider(
             "pIC50 range", min_value=lo, max_value=hi, value=(lo, hi), step=0.1,
+            help=GLOSSARY.get("pIC50", ""),
         )
 
     return FilterSpec(

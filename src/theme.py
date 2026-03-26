@@ -265,6 +265,74 @@ details[data-testid="stExpander"] {
     border-top: 1px solid rgba(128,128,128,0.1);
     margin: 0.5rem 0;
 }
+
+/* ── Contextual help tooltips ────────────────────────────────────── */
+.hint-wrap {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    vertical-align: middle;
+}
+.hint-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+    font-weight: 600;
+    font-style: normal;
+    border-radius: 50%;
+    border: 1px solid rgba(128,128,128,0.25);
+    color: var(--text-color);
+    opacity: 0.3;
+    margin-left: 4px;
+    transition: opacity 0.15s ease;
+    line-height: 1;
+    user-select: none;
+}
+.hint-wrap:hover .hint-icon {
+    opacity: 0.7;
+}
+.hint-tip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 280px;
+    padding: 8px 11px;
+    font-size: 0.74rem;
+    font-weight: 400;
+    line-height: 1.45;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--text-color);
+    background: var(--secondary-background-color);
+    border: 1px solid rgba(128,128,128,0.18);
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 9999;
+    pointer-events: none;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    white-space: normal;
+}
+.hint-wrap:hover .hint-tip {
+    visibility: visible;
+    opacity: 1;
+}
+/* Arrow */
+.hint-tip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--secondary-background-color);
+}
 </style>
 """
 

@@ -71,6 +71,7 @@ from src.substructure import (
 )
 from src.export import sdf_bytes
 from src.ui import (
+    hint,
     render_app_header,
     render_section_label,
     render_metrics_strip,
@@ -581,6 +582,14 @@ if dist_cols and not valid_for_dist.empty:
         help="Select a descriptor for detailed histogram with KDE and statistics.",
     )
     if inspect_col and inspect_col in valid_for_dist.columns:
+        # Show definition of selected descriptor
+        from src.config import GLOSSARY
+        defn = GLOSSARY.get(inspect_col, "")
+        if defn:
+            st.markdown(
+                f'<div class="muted-text" style="margin-bottom:0.5rem">{defn}</div>',
+                unsafe_allow_html=True,
+            )
         fig_inspect = descriptor_inspector(
             valid_for_dist[inspect_col],
             descriptor_name=inspect_col,

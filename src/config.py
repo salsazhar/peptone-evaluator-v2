@@ -147,3 +147,96 @@ SECTION_SUBTITLES: dict[str, str] = {
 # Large-dataset warning threshold
 # ---------------------------------------------------------------------------
 LARGE_DATASET_WARN: int = 10_000
+
+# ---------------------------------------------------------------------------
+# Glossary — definitions for metrics, descriptors, and concepts
+# ---------------------------------------------------------------------------
+GLOSSARY: dict[str, str] = {
+    # Dataset metrics
+    "Total molecules": "Number of rows in the uploaded CSV.",
+    "Valid": "Molecules with SMILES that RDKit could parse into a valid chemical structure.",
+    "Invalid": "Rows where SMILES parsing failed. These are excluded from all analyses.",
+    "Unique": "Distinct canonical SMILES among valid molecules. Duplicates share the same canonical form.",
+
+    # Descriptor averages
+    "Avg pIC50": "Mean of -log₁₀(IC50) across valid molecules. Higher = more potent.",
+    "Avg MW": "Mean molecular weight (Da) across valid molecules.",
+    "Avg LogP": "Mean octanol-water partition coefficient. Measures lipophilicity.",
+    "Avg TPSA": "Mean topological polar surface area (Å²). Relates to membrane permeability.",
+
+    # Similarity metrics
+    "Mean NN Sim": (
+        "Average nearest-neighbour Tanimoto similarity. Each molecule's highest "
+        "similarity to any other molecule, averaged across the set. "
+        "High values indicate clusters of very similar compounds."
+    ),
+    "Diversity": (
+        "1 − mean pairwise Tanimoto similarity. Ranges from 0 (identical set) to 1 "
+        "(maximally diverse). Computed from 1024-bit Morgan fingerprints."
+    ),
+    "Mean Pairwise Sim": (
+        "Average Tanimoto similarity across all molecule pairs. "
+        "Lower values indicate greater structural diversity."
+    ),
+    "Diversity Score": (
+        "1 − mean pairwise Tanimoto similarity. A simple, transparent diversity metric."
+    ),
+    "Duplicates": "Molecules sharing the same canonical SMILES. Counted after canonicalisation.",
+
+    # Descriptors
+    "MolWt": "Exact molecular weight in Daltons.",
+    "LogP": "Wildman-Crippen octanol-water partition coefficient. Measures lipophilicity.",
+    "TPSA": "Topological polar surface area (Å²). Correlates with oral absorption and BBB penetration.",
+    "HBD": "Hydrogen bond donor count. Lipinski rule: ≤ 5.",
+    "HBA": "Hydrogen bond acceptor count. Lipinski rule: ≤ 10.",
+    "RotatableBonds": "Number of freely rotating bonds. Affects conformational flexibility.",
+    "RingCount": "Total number of rings (aromatic + aliphatic).",
+    "FractionCsp3": "Fraction of sp3-hybridised carbons. Higher values suggest more 3-D character.",
+    "HeavyAtomCount": "Number of non-hydrogen atoms.",
+    "FormalCharge": "Net formal charge of the molecule.",
+    "QED": "Quantitative Estimate of Drug-likeness (0–1). Composite of MW, LogP, HBD, HBA, PSA, RotBonds, Arom rings, Alerts.",
+    "MolFormula": "Molecular formula derived from the structure.",
+    "pIC50": "Negative log₁₀ of IC50 (M). Higher values indicate greater potency.",
+
+    # Rule flags
+    "passes_lipinski_like": (
+        "True if MW ≤ 500, LogP ≤ 5, HBD ≤ 5, HBA ≤ 10, RotBonds ≤ 10. "
+        "Heuristic screen only — not a developability predictor."
+    ),
+    "high_flexibility_flag": "Rotatable bonds > 10. Highly flexible molecules may have poor oral bioavailability.",
+    "high_lipophilicity_flag": "LogP > 5. May indicate poor solubility or high metabolic clearance.",
+    "extreme_size_flag": "MW < 150 or MW > 800. Outside typical small-molecule drug range.",
+    "Med-chem heuristic screen": (
+        "Rule-based Lipinski-like filter: MW ≤ 500, LogP ≤ 5, HBD ≤ 5, HBA ≤ 10, "
+        "RotBonds ≤ 10. This is a simple heuristic, not a stability or developability predictor."
+    ),
+
+    # Scaffold analysis
+    "Unique Scaffolds": "Number of distinct Murcko scaffolds. Higher = more structural diversity.",
+    "Scaffold Ratio": "Unique scaffolds / total molecules. 1.0 = every molecule has a unique scaffold.",
+    "Singletons": "Scaffolds appearing exactly once. High singleton fraction indicates novelty.",
+    "Top Scaffold": "Most frequently occurring Murcko scaffold and its share of the dataset.",
+    "Generic Frameworks": "Murcko frameworks with all atoms → C and all bonds → single. Groups similar scaffolds more aggressively.",
+    "Framework Ratio": "Unique generic frameworks / total molecules.",
+
+    # Similarity section
+    "Matches": "Number of molecules containing the queried substructure.",
+    "Searched": "Total valid molecules searched.",
+    "Hit Rate": "Fraction of searched molecules containing the substructure.",
+
+    # Campaign comparison
+    "Novel compounds": "Molecules in the current set whose canonical SMILES do not appear in the reference set.",
+    "Overlap": "Molecules present in both the current and reference sets.",
+    "Reference unique": "Distinct canonical SMILES in the reference set.",
+
+    # Chemical space
+    "PCA": "Principal Component Analysis. Linear projection preserving maximum variance.",
+    "t-SNE": "t-distributed Stochastic Neighbour Embedding. Non-linear; preserves local structure.",
+    "UMAP": "Uniform Manifold Approximation and Projection. Non-linear; preserves both local and global structure.",
+    "Perplexity": "t-SNE parameter balancing local vs. global structure. Higher = more global.",
+    "n_neighbors": "UMAP parameter controlling local neighbourhood size. Larger = more global.",
+    "min_dist": "UMAP parameter controlling minimum distance between points. Smaller = tighter clusters.",
+
+    # Priority shortlist
+    "priority_score": "Composite ranking score combining potency, drug-likeness, diversity, and rule compliance.",
+}
