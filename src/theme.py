@@ -1,9 +1,8 @@
 """
 Theme-aware styling for the Peptone Evaluator.
 
-Provides global CSS injection and Plotly chart helpers that respect the
-user's Streamlit theme (light or dark).  Never forces a colour mode —
-uses Streamlit's native CSS variables so every surface adapts automatically.
+Provides global CSS injection and Plotly chart helpers driven by a
+dark_mode flag stored in st.session_state["dark_mode"] (default True).
 """
 
 from __future__ import annotations
@@ -31,13 +30,17 @@ _FONT_STACK = "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
 # Plotly helpers
 # ───────────────────────────────────────────────────────────────────────
 
-def get_plotly_template() -> str:
-    """Return the Plotly template that matches the active Streamlit theme."""
+def get_dark_mode() -> bool:
+    """Return True when the app is in dark mode (reads session state)."""
     try:
-        base = st.get_option("theme.base")
+        return bool(st.session_state.get("dark_mode", True))
     except Exception:
-        base = None
-    return "plotly_dark" if base == "dark" else "plotly_white"
+        return True
+
+
+def get_plotly_template() -> str:
+    """Return the Plotly template that matches the current dark/light mode."""
+    return "plotly_dark" if get_dark_mode() else "plotly_white"
 
 
 def get_plotly_layout_defaults() -> dict:
@@ -365,6 +368,59 @@ details[data-testid="stExpander"] {
 """
 
 
-def inject_global_css() -> None:
-    """Inject the full CSS design system into the Streamlit page. Call once."""
+_DARK_CSS = """
+<style>
+/* ── Dark mode backgrounds ────────────────────────────────────────── */
+.stApp,
+[data-testid="stAppViewContainer"] {
+    background-color: #0e1117 !important;
+}
+[data-testid="stHeader"] {
+    background-color: #0e1117 !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    background-color: #1a1b27 !important;
+}
+</style>
+"""
+
+_LIGHT_CSS = """
+<style>
+/* ── Light mode — enhanced contrast ──────────────────────────────── */
+.stApp,
+[data-testid="stAppViewContainer"] {
+    background-color: #f5f6fa !important;
+}
+[data-testid="stHeader"] {
+    background-color: #f5f6fa !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    background-color: #e4e5ee !important;
+}
+
+/* Darker text for better readability */
+.section-title { color: #111111 !important; }
+.section-subtitle { color: #444444 !important; opacity: 1 !important; }
+.metric-value { color: #111111 !important; }
+.metric-label { color: #444444 !important; opacity: 1 !important; }
+.app-header-title { color: #111111 !important; opacity: 0.8 !important; }
+.app-header-context { color: #444444 !important; opacity: 1 !important; }
+.app-header-sep { color: #444444 !important; opacity: 0.5 !important; }
+.app-header-badge {
+    background: #d8d9e8 !important;
+    color: #111111 !important;
+}
+.muted-text { color: #444444 !important; opacity: 1 !important; }
+.sidebar-group-label { color: #333333 !important; opacity: 0.7 !important; }
+
+/* Slightly darker Streamlit default elements */
+[data-testid="stMarkdownContainer"] p { color: #1a1a2e; }
+label { color: #1a1a2e !important; }
+</style>
+"""
+
+
+def inject_global_css(dark_mode: bool = True) -> None:
+    """Inject the full CSS design system + theme overrides. Call once per render."""
     st.markdown(_GLOBAL_CSS, unsafe_allow_html=True)
+    st.markdown(_DARK_CSS if dark_mode else _LIGHT_CSS, unsafe_allow_html=True)
