@@ -93,13 +93,7 @@ st.set_page_config(
     page_icon="P",
     layout="wide",
 )
-
-# Initialise dark mode (default on). Must happen before CSS injection so the
-# first render already uses the correct theme.
-if "dark_mode" not in st.session_state:
-    st.session_state["dark_mode"] = True
-
-inject_global_css(dark_mode=st.session_state["dark_mode"])
+inject_global_css()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -138,23 +132,13 @@ uploaded_current, uploaded_reference = render_campaign_upload()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# APP HEADER + THEME TOGGLE
+# APP HEADER
 # ═══════════════════════════════════════════════════════════════════════════
 current_filename = uploaded_current.name if uploaded_current else None
-
-hdr_col, toggle_col = st.columns([10, 1])
-with hdr_col:
-    render_app_header(
-        filename=current_filename,
-        has_campaign=uploaded_reference is not None,
-    )
-with toggle_col:
-    st.toggle(
-        "Dark",
-        value=st.session_state["dark_mode"],
-        key="dark_mode",
-        help="Toggle dark / light mode",
-    )
+render_app_header(
+    filename=current_filename,
+    has_campaign=uploaded_reference is not None,
+)
 
 if uploaded_current is None:
     st.markdown("---")

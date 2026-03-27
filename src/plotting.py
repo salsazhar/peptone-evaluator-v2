@@ -18,7 +18,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from .config import COL_SMILES, COL_CANONICAL, COL_PIC50
-from .theme import CHART_COLORS, get_plotly_template, get_plotly_layout_defaults, get_dark_mode
+from .theme import CHART_COLORS, get_plotly_template, get_plotly_layout_defaults
 
 # ---------------------------------------------------------------------------
 # Shared visual constants — one source of truth
@@ -50,37 +50,40 @@ def _base_layout(template: str) -> dict:
     Shared layout overrides for all figures.
 
     Nature-style: no gridlines, thin axis lines, transparent background,
-    tight margins, small precise tick labels. Adjusts axis/font colours for
-    light mode to ensure legibility.
+    tight margins, small precise tick labels.
     """
-    dark = get_dark_mode()
-    axis_color = _AXIS_COLOR if dark else "rgba(60,60,60,0.55)"
-    font_color = None if dark else "#111111"
-    font_dict = dict(family=_FONT, size=_TICK_FONT_SIZE)
-    if font_color:
-        font_dict["color"] = font_color
-
-    axis_base = dict(
-        showgrid=False,
-        showline=True,
-        linewidth=1,
-        linecolor=axis_color,
-        ticks="outside",
-        ticklen=3,
-        tickwidth=1,
-        tickcolor=axis_color,
-        tickfont=dict(size=_TICK_FONT_SIZE),
-        title_font=dict(size=_LABEL_FONT_SIZE),
-        zeroline=False,
-    )
     return dict(
         template=template,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=font_dict,
+        font=dict(family=_FONT, size=_TICK_FONT_SIZE),
         margin=dict(l=48, r=20, t=32, b=40),
-        xaxis=dict(**axis_base),
-        yaxis=dict(**axis_base),
+        xaxis=dict(
+            showgrid=False,
+            showline=True,
+            linewidth=1,
+            linecolor=_AXIS_COLOR,
+            ticks="outside",
+            ticklen=3,
+            tickwidth=1,
+            tickcolor=_AXIS_COLOR,
+            tickfont=dict(size=_TICK_FONT_SIZE),
+            title_font=dict(size=_LABEL_FONT_SIZE),
+            zeroline=False,
+        ),
+        yaxis=dict(
+            showgrid=False,
+            showline=True,
+            linewidth=1,
+            linecolor=_AXIS_COLOR,
+            ticks="outside",
+            ticklen=3,
+            tickwidth=1,
+            tickcolor=_AXIS_COLOR,
+            tickfont=dict(size=_TICK_FONT_SIZE),
+            title_font=dict(size=_LABEL_FONT_SIZE),
+            zeroline=False,
+        ),
         showlegend=False,
     )
 
@@ -361,16 +364,11 @@ def distribution_grid(
         )
 
     template = get_plotly_template()
-    dark = get_dark_mode()
-    grid_axis_color = _AXIS_COLOR if dark else "rgba(60,60,60,0.55)"
-    grid_font: dict = dict(family=_FONT, size=9)
-    if not dark:
-        grid_font["color"] = "#111111"
     fig.update_layout(
         template=template,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=grid_font,
+        font=dict(family=_FONT, size=9),
         height=_H_GRID_PER_ROW * nrows,
         showlegend=False,
         margin=dict(l=36, r=16, t=28, b=24),
@@ -382,12 +380,12 @@ def distribution_grid(
             showgrid=False,
             showline=True,
             linewidth=0.8,
-            linecolor=grid_axis_color,
+            linecolor=_AXIS_COLOR,
             zeroline=False,
             ticks="outside",
             ticklen=2,
             tickwidth=0.8,
-            tickcolor=grid_axis_color,
+            tickcolor=_AXIS_COLOR,
             tickfont=dict(size=8),
         )
     # Style subplot titles
